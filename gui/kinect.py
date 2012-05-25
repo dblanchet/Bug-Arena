@@ -15,22 +15,27 @@ except ImportError:
     freenect = None
     print "Kinect module not found. Faking it"
 
-__all__ = ['get_buffers','set_default_data','z_to_cm','x_to_cm','y_to_cm','extract_obstacles','get_obstacles']
+__all__ = ['get_buffers', 'set_default_data', 'z_to_cm', 'x_to_cm', 'y_to_cm',
+'extract_obstacles', 'get_obstacles',
+'_UNDEF_DEPTH', '_UNDEF_DISTANCE', '_MIN_DISTANCE', '_MAX_DISTANCE',
+]
 
 _DEFAULT_ANALYSIS_BAND = (37, 196, 566, 85)
 _DEFAULT_SURFACE = (-9999, -9999, 9999, 9999)
-
-_DEFAULT_FILE = '2012-03-02_14-36-48'
 
 
 _UNDEF_DEPTH = 2047
 _UNDEF_DISTANCE = 2000.0
 
+
+# Look up table for depth calculations
 # Formula from http://vvvv.org/forum/the-kinect-thread.
 _dist_values = numpy.tan(numpy.arange(2048) / 1024.0 + 0.5) * 33.825 + 5.7
 
 # XBox 360 Kinect is said to be OK with
 # depth values between 80 cm and 4 meters.
+# saturate all inputs/outputs to those values
+
 _MIN_DISTANCE = 80.0  # cm
 _MAX_DISTANCE = 400.0  # cm
 
@@ -47,11 +52,8 @@ _DIST_ARRAY = numpy.where(
 # ----------------------------------------------
 # Returned by get_buffers
 KinectData = namedtuple('KinectData', 'real_kinect rgb depth')
-_DEFAULT_DATA = KinectData(
-        real_kinect=False,
-        rgb=numpy.load(_DEFAULT_FILE + '_rgb.npy'),
-        depth=numpy.load(_DEFAULT_FILE + '_depth.npy')
-        )
+
+
 def get_buffers():
     '''get_buffers(): returns a KinectData object
     KinectData members:
@@ -66,7 +68,7 @@ def get_buffers():
      '''
     found_kinect = False
 
-    if freenect: # module has been imported
+    if freenect:  # module has been imported
         try:
             # Try to obtain Kinect images.
             (depth, _), (rgb, _) = freenect.sync_get_depth(), freenect.sync_get_video()
@@ -77,19 +79,20 @@ def get_buffers():
     if found_kinect:
         return KinectData(real_kinect=True, rgb=rgb, depth=depth)
     else:
-        # Use local data files.
+        # Use local data files. not defined if not initialized
         return _DEFAULT_DATA
 
 
 def set_default_data(filename):
     '''Sets default fake input file to use, without extension
      ex: 2012-03-02_14-36-48'''
-
+    global _DEFAULT_FILE, _DEFAULT_DATA
+    print "loaded fake data %s" % filename
     _DEFAULT_FILE = filename
     _DEFAULT_DATA = KinectData(
         real_kinect=False,
-        rgb=numpy.load(self._filename + '_rgb.npy'),
-        depth=numpy.load(self._filename + '_depth.npy')
+        rgb=numpy.load(filename + '_rgb.npy'),
+        depth=numpy.load(filename + '_depth.npy')
         )
 
 
@@ -118,7 +121,20 @@ def y_to_cm(y, z):
 # min_height    Minimal y value detected in the obstacle. Int
 # raw_data      Detected data. Numpy Array
 
-Obstacle = namedtuple('Obstacle', 'x y width height z raw_data')
+_Obstacle = namedtuple('Obstacle', 'x y width height z raw_data')
+
+
+class Obstacle (_Obstacle):
+    def __str__(self):
+        s =
+        return "Obstacle at (%.1f,%.1f) size : (%.1fx%.1f), height:%.1f %s" % (
+            self.x, self.y,
+            self.width, self.height,
+            self.z,
+             "(has raw data)" if self.raw_data else '(no raw data)'
+             )
+# patch the class ...
+#Obstacle.__str__ = show_obstacle
 
 
 def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFACE, provide_raw=False):
@@ -138,13 +154,13 @@ def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFA
              height:
                  coordinates of the bounding rectangle in top view *in centimeters*
                  (0,0) : center in front of kinect
-             z: minimal height of the rectangle from the ground, 0 => on the ground
+             z: minimal height of the rectangle from the ground 0 => on the ground
 
-             raw_data: the raw data for analysis
+             raw_data: the raw data for analysis (x,y in pixels, z in cm)
     '''
     MAX_DEPTH = 300.0  # 3 meters. FIXME Depends on Gaming Zone size.
     MAX_BORDER_HEIGHT = 10  # pixels. a foot can never be higher than this. Restrict accordingly
-    MAX_Z_CHANGE = 10 # cm. consider discutinued foot if Z varies this much or more
+    MAX_Z_CHANGE = 10  # cm. consider discutinued foot if Z varies this much or more
 
     dist = z_to_cm(depth)
 
@@ -154,7 +170,7 @@ def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFA
     borders = []     # list of (x, ymax, z@ymax) of non-empty columns. ymax : max Y where z is not null
     # x,y in pixels ; z in cm
 
-    zone = dist[by:by + bh, bx:bx + bw] #extract zone from which data is considered
+    zone = dist[by:by + bh, bx:bx + bw]   # extract zone from which data is considered
 
     # ymax: for each x: maximum Y for the given X on the zone where Z is in range
     for x in xrange(zone.shape[1]):
@@ -169,11 +185,11 @@ def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFA
 
     # Analyze from the borders array the list of feets
 
-    feet = [] # foot : (x,y,z) points in the foot, one per X
-    x, _, z = borders[0] # initialization
+    feet = []  # foot : (x,y,z) points in the foot, one per X
+    x, _, z = borders[0]  # initialization
     prev_x = x
     prev_z = z
-    foot = [] # current foot
+    foot = []  # current foot
     for x, y, z in borders:
         # Separate disconnected feet.
         # connected foot : contiguous X and not too abrupt z change
@@ -184,6 +200,7 @@ def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFA
             foot = [(x, y, z)]
         prev_x = x
         prev_z = z
+
     if foot:
         feet.append(foot)
 
@@ -191,41 +208,47 @@ def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFA
     # put back results to feet
     result = []
     for foot in feet:
-        m = y_to_cm(max(y for _, y, _ in foot)) # top du pied actuel
+        m = max(y_to_cm(y, z) for x, y, z in foot)  # top du pied actuel,  including corresponding z
         result.append([(x, y, z) for x, y, z in foot
-            if m - y_to_cm(y) <= MAX_BORDER_HEIGHT])
+            if m - y_to_cm(y, z) <= MAX_BORDER_HEIGHT])
     feet = result
 
     final = []
-    for foot in feet :
-        left = x_to_cm(min(x for x,y,z in b))
-        right = x_to_cm(max(x for x,y,z in b))
+    for foot in feet:
+        left = min(x_to_cm(x, z) for x, y, z in foot)
+        right = max(x_to_cm(x, z) for x, y, z in foot)
 
-        close = y_to_com(min(z for x,y,z in b))
-        far = y_to_cm(max(z for x,y,z in b))
+        # z is already in cm
+        close = min(z for x, y, z in foot)
+        far = max(z for x, y, z in foot)
 
-        bottom = min(y for x,y,z in b)
+        bottom = min(y_to_cm(y, z) for x, y, z in foot)
 
-        final.append(
+        # swap coordinates Y and Z here (y was height, becomes depth ; invert for z)
+        final.append(Obstacle(
             x=left,
             y=close,
-            width=right-left,
-            height=far-close,
-            z=min(p[1] for p in b),
+            width=right - left,
+            height=far - close,
+            z=min(y for x, y, z in foot),
             raw_data=foot if provide_raw else None
-        )
+        ))
     return final
+
 
 def get_obstacles(provide_raw=False):
     "get buffers from the Kinect and extract obstacles. See extract_obstacles for obstacle definition"
-    k=get_buffers()
-    if not k.real_kinect : print "Using Fake Data ..."
-    return extract_obstacles(k.depth,provide_raw=provide_raw)
+    k = get_buffers()
+    if not k.real_kinect:
+        print "Using Fake Data..."
+    return extract_obstacles(k.depth, provide_raw=provide_raw)
 
+set_default_data('2012-03-02_14-36-48')
 
 if __name__ == '__main__':
     "test the library, don't execute if imported"
-
-    print 'Testing Kinect library ...'
-    for foot in get_obstacles(True) :
-        print foot
+    for f in ('2012-03-02_14-36-48', '2012-03-23_12-55-38', '2012-03-23_13-21-48', '2012-03-30_14-14-43'):
+        set_default_data(f)
+        print 'Testing Kinect library ...'
+        for foot in get_obstacles():
+            print foot
