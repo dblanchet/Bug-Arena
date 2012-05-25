@@ -126,7 +126,6 @@ _Obstacle = namedtuple('Obstacle', 'x y width height z raw_data')
 
 class Obstacle (_Obstacle):
     def __str__(self):
-        s =
         return "Obstacle at (%.1f,%.1f) size : (%.1fx%.1f), height:%.1f %s" % (
             self.x, self.y,
             self.width, self.height,
