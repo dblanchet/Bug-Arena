@@ -5,7 +5,6 @@ Interface to the kinect hardware.
 
 """
 
-import time
 from collections import namedtuple
 import numpy
 
@@ -15,17 +14,24 @@ except ImportError:
     freenect = None
     print "Kinect module not found. Faking it"
 
-__all__ = ['get_buffers', 'set_default_data', 'z_to_cm', 'x_to_cm', 'y_to_cm',
-'extract_obstacles', 'get_obstacles',
-'_UNDEF_DEPTH', '_UNDEF_DISTANCE', '_MIN_DISTANCE', '_MAX_DISTANCE',
-]
+__all__ = ['get_buffers',
+           'set_default_data',
+           'z_to_cm',
+           'x_to_cm',
+           'y_to_cm',
+           'extract_obstacles',
+           'get_obstacles',
+           'UNDEF_DEPTH',
+           'UNDEF_DISTANCE',
+           '_MIN_DISTANCE',
+           '_MAX_DISTANCE']
 
 _DEFAULT_ANALYSIS_BAND = (37, 196, 566, 85)
 _DEFAULT_SURFACE = (-9999, -9999, 9999, 9999)
 
 
-_UNDEF_DEPTH = 2047
-_UNDEF_DISTANCE = 2000.0
+UNDEF_DEPTH = _UNDEF_DEPTH = 2047
+UNDEF_DISTANCE = _UNDEF_DISTANCE = 2000.0
 
 
 # Look up table for depth calculations
@@ -52,7 +58,6 @@ _DIST_ARRAY = numpy.where(
 # ----------------------------------------------
 # Returned by get_buffers
 KinectData = namedtuple('KinectData', 'real_kinect rgb depth')
-
 
 def get_buffers():
     '''get_buffers(): returns a KinectData object
@@ -136,7 +141,11 @@ class Obstacle (_Obstacle):
 #Obstacle.__str__ = show_obstacle
 
 
-def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFACE, provide_raw=False):
+def extract_obstacles(
+        depth,
+        band=_DEFAULT_ANALYSIS_BAND,
+        surface=_DEFAULT_SURFACE,
+        provide_raw=False):
     '''Returns obstacles from pixel depth
     extract_obstacles(depth, band=..., surface=..., provide_raw=False):
         depth: depth array
