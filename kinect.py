@@ -251,12 +251,12 @@ def get_obstacles(provide_raw=False):
         print "Using Fake Data..."
     return extract_obstacles(k.depth, provide_raw=provide_raw)
 
-set_default_data('2012-03-02_14-36-48')
+set_default_data('data/2012-03-02_14-36-48')
 
 if __name__ == '__main__':
     "test the library, don't execute if imported"
     for f in ('2012-03-02_14-36-48', '2012-03-23_12-55-38', '2012-03-23_13-21-48', '2012-03-30_14-14-43'):
-        set_default_data(f)
+        set_default_data('data/' + f)
         print 'Testing Kinect library ...'
         for foot in get_obstacles():
             print foot
