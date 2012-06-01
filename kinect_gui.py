@@ -335,6 +335,7 @@ class GameSceneArea(gtk.DrawingArea):
 
 class KinectTestWindow(gtk.Window):
 
+    DATA_DIR = 'data/'
     REFRESH_DELAY = 500  # ms
 
     def __init__(self):
@@ -392,7 +393,7 @@ class KinectTestWindow(gtk.Window):
                 (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
-        dialog.set_current_folder('data')
+        dialog.set_current_folder(self.DATA_DIR)
 
         # Get only numpy arrays.
         filter = gtk.FileFilter()
@@ -419,8 +420,8 @@ class KinectTestWindow(gtk.Window):
         rgb = self._kinect.latest_rgb
         depth = self._kinect.latest_depth
         fname_base = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
-        numpy.save(fname_base + '_rgb', rgb)
-        numpy.save(fname_base + '_depth', depth)
+        numpy.save(self.DATA_DIR + fname_base + '_rgb', rgb)
+        numpy.save(self.DATA_DIR + fname_base + '_depth', depth)
         print 'Saved with "%s" base filename' % fname_base
 
     def _pause_cb(self, widget, data=None):
