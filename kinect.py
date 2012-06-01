@@ -59,6 +59,7 @@ _DIST_ARRAY = numpy.where(
 # Returned by get_buffers
 KinectData = namedtuple('KinectData', 'real_kinect rgb depth')
 
+
 def get_buffers():
     '''get_buffers(): returns a KinectData object
     KinectData members:
@@ -68,15 +69,16 @@ def get_buffers():
 
      (buffers=numpy array)
 
-     the input is taken from a file if the kinect is missing or the library not present.
-     no memorization is done
+     the input is taken from a file if the kinect is missing or the library not
+     present. No memorization is done.
      '''
     found_kinect = False
 
     if freenect:  # module has been imported
         try:
             # Try to obtain Kinect images.
-            (depth, _), (rgb, _) = freenect.sync_get_depth(), freenect.sync_get_video()
+            (depth, _), (rgb, _) = \
+                    freenect.sync_get_depth(), freenect.sync_get_video()
             found_kinect = True
         except TypeError:
             pass
@@ -122,7 +124,8 @@ def y_to_cm(y, z):
 
 # Returned by analyzer object.
 #
-# bounds        Rectangle that contains the obstacle. Tuple (x, y, w, h) (y au sens Z)
+# bounds        Rectangle that contains the obstacle. Tuple (x, y, w, h) (y au
+#               sens Z)
 # min_height    Minimal y value detected in the obstacle. Int
 # raw_data      Detected data. Numpy Array
 
@@ -148,10 +151,12 @@ def extract_obstacles(
         provide_raw=False):
     '''Returns obstacles from pixel depth
     extract_obstacles(depth, band=..., surface=..., provide_raw=False):
-        depth: depth array
-        band: an optional analysis band in pixels (x, y, w, h) and
-        surface: an optional analysis band in cm within the game area (x, z, w, p) - in top view, z is depth
-        provide_raw : whether to provide raw data in the returned object or None
+        depth:      depth array
+        band:       an optional analysis band in pixels (x, y, w, h) and
+        surface:    an optional analysis band in cm within the game area
+                    (x, z, w, p) - in top view, z is depth
+        provide_raw :   whether to provide raw data in the returned object or
+                        None
 
         returns a list of Obstacles objects
 
@@ -160,27 +165,33 @@ def extract_obstacles(
              y:
              width:
              height:
-                 coordinates of the bounding rectangle in top view *in centimeters*
-                 (0,0) : center in front of kinect
-             z: minimal height of the rectangle from the ground 0 => on the ground
+                 coordinates of the bounding rectangle in top view *in
+                 centimeters* (0,0) : center in front of kinect
+             z: minimal height of the rectangle from the ground 0 => on the
+                ground
 
              raw_data: the raw data for analysis (x,y in pixels, z in cm)
     '''
     MAX_DEPTH = 300.0  # 3 meters. FIXME Depends on Gaming Zone size.
-    MAX_BORDER_HEIGHT = 10  # pixels. a foot can never be higher than this. Restrict accordingly
-    MAX_Z_CHANGE = 10  # cm. consider discutinued foot if Z varies this much or more
+    MAX_BORDER_HEIGHT = 10  # pixels. a foot can never be higher than this.
+                            # Restrict accordingly.
+    MAX_Z_CHANGE = 10  # cm. consider discutinued foot if Z varies this much or
+                       # more
 
     dist = z_to_cm(depth)
 
     # -- Extract borders (lower Y where Z is in range)
     bx, by, bw, bh = band
 
-    borders = []     # list of (x, ymax, z@ymax) of non-empty columns. ymax : max Y where z is not null
-    # x,y in pixels ; z in cm
+    borders = []     # list of (x, ymax, z@ymax) of non-empty columns. ymax :
+                     # max Y where z is not null
+                     # x,y in pixels ; z in cm
 
-    zone = dist[by:by + bh, bx:bx + bw]   # extract zone from which data is considered
+    zone = dist[by:by + bh, bx:bx + bw]   # extract zone from which Data
+                                         # is considered
 
-    # ymax: for each x: maximum Y for the given X on the zone where Z is in range
+    # ymax: for each x: maximum Y for the given X
+    # on the zone where Z is in range
     for x in xrange(zone.shape[1]):
         non_null_y = numpy.argwhere(zone[:, x] <= MAX_DEPTH)  # y in range ?
         if non_null_y.size:  # is there any z in the range ?
@@ -212,11 +223,13 @@ def extract_obstacles(
     if foot:
         feet.append(foot)
 
-    # Limit zone height : distance between base and top must be restricted. shrink foot accordingly (...)
+    # Limit zone height : distance between base and top must be restricted.
+    # shrink foot accordingly (...)
     # put back results to feet
     result = []
     for foot in feet:
-        m = max(y_to_cm(y, z) for x, y, z in foot)  # top du pied actuel,  including corresponding z
+        m = max(y_to_cm(y, z) for x, y, z in foot)  # top du pied actuel,
+                                                    # including corresponding z
         result.append([(x, y, z) for x, y, z in foot
             if m - y_to_cm(y, z) <= MAX_BORDER_HEIGHT])
     feet = result
@@ -232,7 +245,8 @@ def extract_obstacles(
 
         bottom = min(y_to_cm(y, z) for x, y, z in foot)
 
-        # swap coordinates Y and Z here (y was height, becomes depth ; invert for z)
+        # swap coordinates Y and Z here (y was height,
+        # becomes depth ; invert for z)
         final.append(Obstacle(
             x=left,
             y=close,
@@ -245,7 +259,9 @@ def extract_obstacles(
 
 
 def get_obstacles(provide_raw=False):
-    "get buffers from the Kinect and extract obstacles. See extract_obstacles for obstacle definition"
+    """Get buffers from the Kinect and extract obstacles.
+
+    See extract_obstacles for obstacle definition."""
     k = get_buffers()
     if not k.real_kinect:
         print "Using Fake Data..."
@@ -255,7 +271,10 @@ set_default_data('data/2012-03-02_14-36-48')
 
 if __name__ == '__main__':
     "test the library, don't execute if imported"
-    for f in ('2012-03-02_14-36-48', '2012-03-23_12-55-38', '2012-03-23_13-21-48', '2012-03-30_14-14-43'):
+    for f in ('2012-03-02_14-36-48',
+            '2012-03-23_12-55-38',
+            '2012-03-23_13-21-48',
+            '2012-03-30_14-14-43'):
         set_default_data('data/' + f)
         print 'Testing Kinect library ...'
         for foot in get_obstacles():
