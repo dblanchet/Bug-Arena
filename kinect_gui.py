@@ -392,6 +392,7 @@ class KinectTestWindow(gtk.Window):
                 (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
+        dialog.set_current_folder('data')
 
         # Get only numpy arrays.
         filter = gtk.FileFilter()
