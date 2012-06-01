@@ -398,7 +398,7 @@ class KinectTestWindow(gtk.Window):
 
     def _choose_cb(self, widget, data=None):
         # Create file chooser.
-        dialog = gtk.FileChooserDialog("Open..",
+        dialog = gtk.FileChooserDialog("Open...",
                 None,
                 gtk.FILE_CHOOSER_ACTION_OPEN,
                 (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
