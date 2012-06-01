@@ -25,10 +25,9 @@ class KinectDisplay(gtk.DrawingArea):
 
         self._observers = []
 
-        self._analyzer = None
         self._x = -1
         self._y = -1
-        self._feet = []
+        self._obstacles = []
         self.refresh_data()
 
         self.add_events(gtk.gdk.MOTION_NOTIFY
@@ -46,7 +45,7 @@ class KinectDisplay(gtk.DrawingArea):
     def _notify_observers(self):
         data = {}
         data['cursor'] = self._x, self._y, self._depth[self._y, self._x]
-        data['feet'] = self._feet
+        data['obstacles'] = self._obstacles
 
         for observer in self._observers:
             observer.observable_changed(data)
@@ -76,16 +75,9 @@ class KinectDisplay(gtk.DrawingArea):
         self._found_kinect, self._rgb, self._depth = kinect.get_buffers()
 
         # Perform basic data extraction.
-        #self._obstacles = kinect.extract_obstacles(depth)
-
-        #self._analyzer = DepthAnalyser(depth)
-        #l, r = self._analyzer.find_sticks()
-        #self._left_stick, self._right_stick = l, r
-        #dz = self._analyzer.extract_detection_band(l, r)
-        #self._detection_zone = dz
-        #lb = self._analyzer.extract_borders(dz)
-        #f = self._analyzer.analyze_borders(lb)
-        #self._feet = f
+        self._obstacles = kinect.extract_obstacles(
+                self._depth,
+                provide_raw=True)
 
         # Convert numpy arrays to cairo surfaces.
         alpha_channel = numpy.ones((480, 640, 1), dtype=numpy.uint8) * 255
@@ -182,10 +174,10 @@ class KinectDisplay(gtk.DrawingArea):
         # Draw detected feet in detection zone.
         ctx.set_line_width(2)
         ctx.set_source_rgb(1, 0, 0)
-        for foot in self._feet:
-            x, y, _ = foot[0]
+        for obstacle in self._obstacles:
+            x, y, w, h, z, raw_data = obstacle
             ctx.move_to(640 + x, y)
-            for x, y, _ in foot[1:]:
+            for x, y, _ in raw_data[1:]:
                 ctx.line_to(640 + x, y)
             ctx.stroke()
 
@@ -212,7 +204,7 @@ class GameSceneArea(gtk.DrawingArea):
         self._z = -1
         self._y = -1
         self._x = -1
-        self._feet = []
+        self._obstacles = []
 
     def expose(self, widget, event):
         self.context = widget.window.cairo_create()
@@ -221,7 +213,7 @@ class GameSceneArea(gtk.DrawingArea):
 
     def observable_changed(self, data):
         self._x, self._y, self._z = data['cursor']
-        self._feet = data['feet']
+        self._obstacles = data['obstacles']
         self.queue_draw()
 
     def draw(self, ctx):
@@ -310,16 +302,26 @@ class GameSceneArea(gtk.DrawingArea):
         # Detected feet.
         ctx.set_line_width(2)
         ctx.set_source_rgb(0.5, 0, 0)
-        for foot in self._feet:
-            px, _, z = foot[0]
+        for obstacle in self._obstacles:
+            px, py, pw, ph, z, raw_data = obstacle
+            print px, py, pw, z
             x = self.x_to_pixel(px, z)
             y = self.z_to_pixel(z)
-            ctx.move_to(x, y)
-            for p, _, z in foot[1:]:
-                x = self.x_to_pixel(p, z)
-                y = self.z_to_pixel(z)
-                ctx.line_to(x, y)
+            w = self.x_to_pixel(pw, z) - x
+            ctx.set_line_width(2)
+            ctx.set_source_rgb(0.0, 1.0, 0.0)
+            ctx.rectangle(x, y, w, 1)
             ctx.stroke()
+
+            #px, _, z = foot[0]
+            #x = self.x_to_pixel(px, z)
+            #y = self.z_to_pixel(z)
+            #ctx.move_to(x, y)
+            #for p, _, z in foot[1:]:
+                #x = self.x_to_pixel(p, z)
+                #y = self.z_to_pixel(z)
+                #ctx.line_to(x, y)
+            #ctx.stroke()
 
     def z_to_pixel(self, z):
         # FIXME Needs proper scaling.
