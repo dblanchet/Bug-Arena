@@ -11,8 +11,6 @@ import cairo
 
 import time
 
-import os
-
 
 class KinectDisplay(gtk.DrawingArea):
 
