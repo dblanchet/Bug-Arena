@@ -182,23 +182,6 @@ class KinectDisplay(gtk.DrawingArea):
             ctx.show_text(text)
             ctx.stroke()
 
-        # Draw sticks rectangles and detection zone.
-        #ctx.set_line_width(1)
-        #ctx.set_source_rgb(1, 1, 0)
-
-        #x, y, w, h, _ = self._left_stick
-        #ctx.rectangle(x + 640, y, w, h)
-        #ctx.stroke()
-
-        #x, y, w, h, _ = self._right_stick
-        #ctx.rectangle(x + 640, y, w, h)
-        #ctx.stroke()
-
-        #ctx.set_source_rgb(1, 0, 1)
-        #x, y, w, h = self._detection_zone
-        #ctx.rectangle(x + 640, y, w, h)
-        #ctx.stroke()
-
         # Draw detected feet in detection zone.
         ctx.set_line_width(2)
         ctx.set_source_rgb(1, 0, 0)
@@ -281,62 +264,6 @@ class GameSceneArea(gtk.DrawingArea):
         ctx.set_source_rgb(0.0, 0.0, 1.0)
         ctx.rectangle(80, 0, 480, 360)
         ctx.stroke()
-
-        # Sticks.
-        #if self._left_stick and self._right_stick:
-
-            #ctx.set_line_width(1)
-
-            #x, _, w, _, z_l = self._left_stick
-            #x_l = self.x_to_pixel(x + w, z_l)
-            #radius = (x_l - self.x_to_pixel(x, z_l)) / 2
-            #ctx.arc(x_l - radius, self.z_to_pixel(z_l) - radius,
-                    #radius, 0, 2 * math.pi)
-            #ctx.stroke()
-
-            #x, _, w, _, z_r = self._right_stick
-            #x_r = self.x_to_pixel(x + w, z_r)
-            #radius = (x_r - self.x_to_pixel(x, z_r)) / 2
-            #ctx.arc(x_r - radius, self.z_to_pixel(z_r) - radius,
-                    #radius, 0, 2 * math.pi)
-            #ctx.stroke()
-
-            ## d1 (Inter-stick distance).
-            #x_r = self.x_to_pixel(x, z_r)
-            #z_mean = (z_l + z_r) / 2
-            #y = self.z_to_pixel(z_mean)
-
-            #ctx.set_line_width(.5)
-            #ctx.set_source_rgb(0.0, 0.5, 0.0)
-
-            #ctx.move_to(x_l, y)
-            #ctx.line_to(x_r, y)
-            #ctx.stroke()
-
-            #ctx.set_font_size(16)
-            #ctx.move_to(310, y - 5)
-            #ctx.show_text('d1')
-            #ctx.stroke()
-
-            #ctx.move_to(500, 400)
-            #ctx.show_text('d1 = xx m')
-            #ctx.stroke()
-
-            ## d2 (Kinect-stick distance).
-            #ctx.set_source_rgb(0.5, 0.0, 0.0)
-
-            #ctx.move_to(270, y)
-            #ctx.line_to(270, 480)
-            #ctx.stroke()
-
-            #ctx.set_font_size(16)
-            #ctx.move_to(250, 440)
-            #ctx.show_text('d2')
-            #ctx.stroke()
-
-            #ctx.move_to(500, 420)
-            #ctx.show_text('d2 = %1.1f m' % (z_mean / 100))
-            #ctx.stroke()
 
         # Current cursor depth.
         if self._z >= 50.0 and self._z != kinect.UNDEF_DISTANCE:
