@@ -107,14 +107,14 @@ def z_to_cm(depth):
 
 
 def x_to_cm(x, z):
-    "from a depth and x, converts to x in centimeters"
-    coeff = 0.1734  # Measured constant.
+    "from a depth in cm and x, converts to x in centimeters"
+    coeff = 0.001734  # Measured constant.
     return (320.0 - x) * z * coeff
 
 
 def y_to_cm(y, z):
-    'from a depth and y, converts to y height in centimeters'
-    coeff = 0.1734  # Measured constant.
+    'from a depth in cm and y, converts to y height in centimeters'
+    coeff = 0.001734  # Measured constant.
     dev = 9 / coeff / 200  # Horizon is not at y = 0.
     h = 6.0  # Kinect captor is not at y = 0.
     return ((480.0 - y) - 240.0 - dev) * z * coeff + h
