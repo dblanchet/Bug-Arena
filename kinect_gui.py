@@ -47,8 +47,7 @@ class KinectDisplay(gtk.DrawingArea):
 
     def _notify_observers(self):
         data = {}
-        data['cursor'] = self._x, self._y, \
-                kinect.z_to_cm(self._depth[self._y, self._x])
+        data['cursor'] = self._x, self._y, self._depth[self._y, self._x]
         data['feet'] = self._feet
 
         for observer in self._observers:
@@ -266,17 +265,18 @@ class GameSceneArea(gtk.DrawingArea):
         ctx.stroke()
 
         # Current cursor depth.
-        if self._z >= 50.0 and self._z != kinect.UNDEF_DISTANCE:
+        z = kinect.z_to_cm(self._z)
+        if z >= 50.0 and z != kinect.UNDEF_DISTANCE:
 
             # Draw line.
             ctx.set_line_width(1)
             ctx.set_source_rgb(1.0, 0.0, 0.0)
-            y = self.z_to_pixel(self._z)
+            y = self.z_to_pixel(z)
             ctx.move_to(0, y)
             ctx.line_to(640, y)
             ctx.stroke()
 
-            x = self.x_to_pixel(self._x, self._z)
+            x = self.x_to_pixel(self._x, z)
             ctx.move_to(x, y - 5)
             ctx.line_to(x, y - 10)
             ctx.stroke()
@@ -297,16 +297,16 @@ class GameSceneArea(gtk.DrawingArea):
 
             ctx.move_to(500, 440)
             ctx.show_text('x = %2.2f m' % (
-                self.x_to_meter(self._x, self._z) / 100.0))
+                kinect.x_to_cm(self._x, z) / 100.0))
             ctx.stroke()
 
             ctx.move_to(500, 460)
             ctx.show_text('y = %2.2f m' % (
-                self.y_to_meter(self._y, self._z) / 100.0))
+                kinect.y_to_cm(self._y, z) / 100.0))
             ctx.stroke()
 
             ctx.move_to(500, 480)
-            ctx.show_text('z = %2.2f m' % (self._z / 100.0))
+            ctx.show_text('z = %2.2f m' % (z / 100.0))
             ctx.stroke()
 
         # Detected feet.
@@ -322,18 +322,6 @@ class GameSceneArea(gtk.DrawingArea):
                 y = self.z_to_pixel(z)
                 ctx.line_to(x, y)
             ctx.stroke()
-
-    def x_to_meter(self, x, z):
-        # FIXME Returns centimeters.
-        coeff = 0.001734  # Measured constant.
-        return (320.0 - x) * z * coeff
-
-    def y_to_meter(self, y, z):
-        # FIXME Returns centimeters.
-        coeff = 0.001734  # Measured constant.
-        dev = 9 / coeff / 200  # Horizon is not at y = 0.
-        h = 6.0  # Kinect captor is not at y = 0.
-        return ((480.0 - y) - 240.0 - dev) * z * coeff + h
 
     def z_to_pixel(self, z):
         # FIXME Needs proper scaling.
