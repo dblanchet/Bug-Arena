@@ -404,9 +404,8 @@ class KinectTestWindow(gtk.Window):
         if chosen:
             # Extract file basename.
             filename = dialog.get_filename()[:-10]
-            basename = os.path.basename(filename)
-            kinect.set_filename(basename)
-            print basename, 'selected'
+            kinect.set_default_data(filename)
+            print filename, 'selected'
 
         dialog.destroy()
 
