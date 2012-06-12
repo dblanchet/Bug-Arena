@@ -175,7 +175,8 @@ class KinectDisplay(gtk.DrawingArea):
         ctx.set_line_width(2)
         ctx.set_source_rgb(1, 0, 0)
         for obstacle in self._obstacles:
-            x, y, w, h, z, raw_data = obstacle
+            raw_data = obstacle[-1]
+            x, y, _ = raw_data[0]
             ctx.move_to(640 + x, y)
             for x, y, _ in raw_data[1:]:
                 ctx.line_to(640 + x, y)
@@ -304,7 +305,7 @@ class GameSceneArea(gtk.DrawingArea):
         ctx.set_source_rgb(0.5, 0, 0)
         for obstacle in self._obstacles:
             px, py, pw, ph, z, raw_data = obstacle
-            print px, py, pw, z
+            #print px, py, pw, z
             x = self.x_to_pixel(px, z)
             y = self.z_to_pixel(z)
             w = self.x_to_pixel(pw, z) - x
