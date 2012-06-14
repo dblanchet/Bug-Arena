@@ -5,7 +5,6 @@ Interface to the kinect hardware.
 
 """
 
-import time
 from collections import namedtuple
 import numpy
 
@@ -115,16 +114,16 @@ def y_to_cm(y, z):
     return ((480.0 - y) - 240.0 - dev) * z * coeff + h
 
 
-# Returned by analyzer object.
-#
-# bounds        Rectangle that contains the obstacle. Tuple (x, y, w, h) (y au sens Z)
-# min_height    Minimal y value detected in the obstacle. Int
-# raw_data      Detected data. Numpy Array
+
 
 _Obstacle = namedtuple('Obstacle', 'x y width height z raw_data')
-
-
 class Obstacle (_Obstacle):
+    '''Returned by analyzer object.
+    x, y : position related to front/center in cm Y is the depth
+    w, h : size in cm
+    height    Minimal y value detected in the obstacle. Int
+    raw_data      Detected data. Numpy Array'''
+
     def __str__(self):
         return "Obstacle at (%.1f,%.1f) size : (%.1fx%.1f), height:%.1f %s" % (
             self.x, self.y,
@@ -132,8 +131,6 @@ class Obstacle (_Obstacle):
             self.z,
              "(has raw data)" if self.raw_data else '(no raw data)'
              )
-# patch the class ...
-#Obstacle.__str__ = show_obstacle
 
 
 def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFACE, provide_raw=False):
@@ -229,14 +226,14 @@ def extract_obstacles(depth, band=_DEFAULT_ANALYSIS_BAND, surface=_DEFAULT_SURFA
             y=close,
             width=right - left,
             height=far - close,
-            z=min(y for x, y, z in foot),
+            z=bottom,
             raw_data=foot if provide_raw else None
         ))
     return final
 
 
 def get_obstacles(provide_raw=False):
-    "get buffers from the Kinect and extract obstacles. See extract_obstacles for obstacle definition"
+    "get buffers from the Kinect and extract obstacles. See extract_obstacles and obstacle objects help for obstacle definition"
     k = get_buffers()
     if not k.real_kinect:
         print "Using Fake Data..."
