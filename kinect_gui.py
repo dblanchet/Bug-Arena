@@ -11,6 +11,8 @@ import cairo
 
 import time
 
+GAMING_DETECTION_ZONE = (37, 196, 566, 85)
+
 
 class KinectDisplay(gtk.DrawingArea):
 
@@ -77,6 +79,7 @@ class KinectDisplay(gtk.DrawingArea):
         # Perform basic data extraction.
         self._obstacles = kinect.extract_obstacles(
                 self._depth,
+                band=GAMING_DETECTION_ZONE,
                 provide_raw=True)
 
         # Convert numpy arrays to cairo surfaces.
@@ -120,6 +123,14 @@ class KinectDisplay(gtk.DrawingArea):
         ctx.paint()
 
         ctx.restore()
+
+        # Dectection band.
+        ctx.set_line_width(2)
+        ctx.set_source_rgb(0.0, 0.0, 1.0)
+        x, y, w, h = GAMING_DETECTION_ZONE
+        x += 640
+        ctx.rectangle(x, y, w, h)
+        ctx.stroke()
 
         # Coordinate system.
         ctx.set_line_width(1)
