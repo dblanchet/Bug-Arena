@@ -204,13 +204,9 @@ class KinectDisplay(gtk.DrawingArea):
 
 class GameSceneArea(gtk.DrawingArea):
 
-    ZONE_WIDTH = 180.0  # cm
-    ZONE_DEPTH = 150.0  # cm
-    KINECT_TO_ZONE_DISTANCE = 150.0  # cm
-
-    def __init__(self):
+    def __init__(self, size):
         gtk.DrawingArea.__init__(self)
-        self.set_size_request(640, 480)
+        self.set_size_request(*size)
         self.connect("expose_event", self.expose)
 
         self._z = -1
@@ -367,7 +363,7 @@ class KinectTestWindow(gtk.Window):
         vbox.pack_start(hbox)
 
         # Game scheme representation.
-        game_scene = GameSceneArea()
+        game_scene = GameSceneArea((640, 480))
         self._display.add_observer(game_scene)
         hbox.pack_start(game_scene)
 
