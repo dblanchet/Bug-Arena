@@ -173,7 +173,7 @@ def extract_obstacles(
              raw_data: the raw data for analysis (x,y in pixels, z in cm)
     '''
     MAX_DEPTH = 300.0  # 3 meters. FIXME Depends on Gaming Zone size.
-    MAX_BORDER_HEIGHT = 10  # pixels. a foot can never be higher than this.
+    MAX_BORDER_HEIGHT = 5  # cm. a foot can never be higher than this.
                             # Restrict accordingly.
     MAX_Z_CHANGE = 10  # cm. consider discutinued foot if Z varies this much or
                        # more
@@ -228,10 +228,10 @@ def extract_obstacles(
     # put back results to feet
     result = []
     for foot in feet:
-        m = max(y_to_cm(y, z) for x, y, z in foot)  # top du pied actuel,
+        m = min(y_to_cm(y, z) for x, y, z in foot)  # bas du pied actuel,
                                                     # including corresponding z
         result.append([(x, y, z) for x, y, z in foot
-            if m - y_to_cm(y, z) <= MAX_BORDER_HEIGHT])
+            if y_to_cm(y, z) - m <= MAX_BORDER_HEIGHT])
     feet = result
 
     final = []
