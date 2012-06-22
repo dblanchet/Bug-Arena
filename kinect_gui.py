@@ -11,7 +11,8 @@ import cairo
 
 import time
 
-GAMING_DETECTION_ZONE = (37, 196, 566, 85)
+GAMING_AREA = (-150.0, 100.0, 150.0, 300.0)  # Centimeters (x0, z0, x1, z1)
+GAMING_DETECTION_ZONE = (37, 196, 566, 85)  # Pixels
 
 
 class KinectDisplay(gtk.DrawingArea):
@@ -214,6 +215,13 @@ class GameSceneArea(gtk.DrawingArea):
         self._x = -1
         self._obstacles = []
 
+        # Compute pixel per cm.
+        l, h = size  # pixels
+        x0, z0, x1, z1 = GAMING_AREA  # Centimeters
+        x_ratio = l / (x1 - x0)
+        y_ratio = h / max(z1, z0)
+        self._px_per_cm = min(x_ratio, y_ratio)
+
     def expose(self, widget, event):
         self.context = widget.window.cairo_create()
         self.draw(self.context)
@@ -259,32 +267,38 @@ class GameSceneArea(gtk.DrawingArea):
         # Gaming zone.
         ctx.set_line_width(2)
         ctx.set_source_rgb(0.0, 0.0, 1.0)
-        ctx.rectangle(80, 0, 480, 360)
+        x0, z0, x1, z1 = GAMING_AREA  # Centimeters
+        px = self.x_to_pixel(x0)
+        py = self.z_to_pixel(z1)
+        pw = self.x_to_pixel(x1) - px
+        ph = self.z_to_pixel(z0) - py
+        ctx.rectangle(px, py, pw, ph)
         ctx.stroke()
 
         # Current cursor depth.
         z = kinect.z_to_cm(self._z)
-        if z >= 50.0 and z != kinect.UNDEF_DISTANCE:
+        if z0 < z < z1:
 
             # Draw line.
             ctx.set_line_width(1)
             ctx.set_source_rgb(1.0, 0.0, 0.0)
-            y = self.z_to_pixel(z)
-            ctx.move_to(0, y)
-            ctx.line_to(640, y)
+            py = self.z_to_pixel(z)
+            ctx.move_to(0, py)
+            ctx.line_to(640, py)
             ctx.stroke()
 
-            x = self.x_to_pixel(self._x, z)
-            ctx.move_to(x, y - 5)
-            ctx.line_to(x, y - 10)
+            x = - kinect.x_to_cm(self._x, z)
+            px = self.x_to_pixel(x)
+            ctx.move_to(px, py - 5)
+            ctx.line_to(px, py - 10)
             ctx.stroke()
-            ctx.move_to(x, y + 5)
-            ctx.line_to(x, y + 10)
+            ctx.move_to(px, py + 5)
+            ctx.line_to(px, py + 10)
             ctx.stroke()
 
             # Add distance info.
             ctx.set_line_width(0.5)
-            ctx.move_to(60, y)
+            ctx.move_to(60, py)
             ctx.line_to(60, 480)
             ctx.stroke()
 
@@ -311,34 +325,37 @@ class GameSceneArea(gtk.DrawingArea):
         ctx.set_line_width(2)
         ctx.set_source_rgb(0.5, 0, 0)
         for obstacle in self._obstacles:
-            px, py, pw, ph, z, raw_data = obstacle
-            #print px, py, pw, z
-            x = self.x_to_pixel(px, z)
-            y = self.z_to_pixel(z)
-            w = self.x_to_pixel(pw, z) - x
+            x, y, w, h, z, raw_data = obstacle
+
+            # Obstacle box.
+            px = self.x_to_pixel(-x - w)
+            py = self.z_to_pixel(y)
+            pw = self.x_to_pixel(- x) - px
+            ph = self.z_to_pixel(y + h) - py
+
+            ctx.rectangle(px, py, pw, ph)
             ctx.set_line_width(2)
-            ctx.set_source_rgb(0.0, 1.0, 0.0)
-            ctx.rectangle(x, y, w, 1)
+            ctx.set_source_rgb(0.0, 0.5, 0.0)
             ctx.stroke()
 
-            #px, _, z = foot[0]
-            #x = self.x_to_pixel(px, z)
-            #y = self.z_to_pixel(z)
-            #ctx.move_to(x, y)
-            #for p, _, z in foot[1:]:
-                #x = self.x_to_pixel(p, z)
-                #y = self.z_to_pixel(z)
-                #ctx.line_to(x, y)
-            #ctx.stroke()
+            # Raw data from Kinect.
+            px, _, z = raw_data[0]
+            x = self.x_to_pixel(-kinect.x_to_cm(px, z))
+            y = self.z_to_pixel(z)
+            ctx.move_to(x, y)
+            for px, _, z in raw_data[1:]:
+                x = self.x_to_pixel(-kinect.x_to_cm(px, z))
+                y = self.z_to_pixel(z)
+                ctx.line_to(x, y)
+            ctx.set_line_width(0.5)
+            ctx.set_source_rgb(0.7, 0.0, 0.0)
+            ctx.stroke()
 
     def z_to_pixel(self, z):
-        # FIXME Needs proper scaling.
-        return 450 - z
+        return 480 - int(z * self._px_per_cm)
 
-    def x_to_pixel(self, x, z):
-        # FIXME Update with x_to_meter.
-        coeff = - .280 / 0.6 / 180
-        return 320 + (320.0 - x) * z * coeff
+    def x_to_pixel(self, x):
+        return int(x * self._px_per_cm) + 320
 
 
 class KinectTestWindow(gtk.Window):
